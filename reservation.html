@@ -5,3 +5,696 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ご予約 | Relaxation salon Raku</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;500&family=Shippori+Mincho:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --sage: #7a9a7a;
+      --sage-light: #c8d8c0;
+      --sage-pale: #f0f5ee;
+      --ink: #2c2c2c;
+      --ink-light: #666;
+      --border: #d8e4d0;
+      --white: #fff;
+      --error: #c0392b;
+    }
+
+    body {
+      font-family: 'Noto Serif JP', 'Shippori Mincho', serif;
+      background: var(--sage-pale);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      text-align: center;
+      padding: 28px 20px 20px;
+    }
+    header h1 {
+      font-size: 1.4rem;
+      font-weight: 400;
+      letter-spacing: .18em;
+      color: var(--ink);
+    }
+    header p {
+      font-size: .78rem;
+      color: var(--ink-light);
+      margin-top: 4px;
+      letter-spacing: .08em;
+    }
+
+    .steps {
+      display: flex;
+      justify-content: center;
+      gap: 0;
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0 20px;
+    }
+    .step {
+      padding: 12px 18px;
+      font-size: .72rem;
+      color: #aaa;
+      letter-spacing: .06em;
+      border-bottom: 2px solid transparent;
+      transition: color .2s, border-color .2s;
+    }
+    .step.active {
+      color: var(--sage);
+      border-bottom-color: var(--sage);
+      font-weight: 500;
+    }
+
+    main {
+      max-width: 680px;
+      margin: 32px auto;
+      padding: 0 16px 60px;
+    }
+
+    .card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 32px 28px;
+      display: none;
+    }
+    .card.active { display: block; }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: 500;
+      letter-spacing: .12em;
+      color: var(--ink);
+      margin-bottom: 24px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* メニュー選択 */
+    .menu-list { display: flex; flex-direction: column; gap: 10px; }
+    .menu-item {
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 16px 18px;
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .menu-item:hover { border-color: var(--sage); background: var(--sage-pale); }
+    .menu-item.selected { border-color: var(--sage); background: #f5faf3; }
+    .menu-name { font-size: .92rem; font-weight: 500; }
+    .menu-meta { font-size: .78rem; color: var(--ink-light); margin-top: 2px; }
+    .menu-price {
+      font-size: 1.1rem;
+      color: var(--sage);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    /* 日付・時間選択 */
+    .date-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+    .date-btn {
+      border: 1px solid var(--border);
+      background: var(--white);
+      border-radius: 4px;
+      padding: 10px 6px;
+      text-align: center;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: .78rem;
+      transition: border-color .15s, background .15s;
+    }
+    .date-btn:hover:not(:disabled) { border-color: var(--sage); background: var(--sage-pale); }
+    .date-btn.selected { border-color: var(--sage); background: #f5faf3; font-weight: 500; }
+    .date-btn:disabled { opacity: .35; cursor: not-allowed; }
+    .date-day { font-size: .68rem; color: var(--ink-light); }
+    .date-day.sun { color: #c0392b; }
+    .date-day.sat { color: #2980b9; }
+
+    .time-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      gap: 8px;
+    }
+    .time-btn {
+      border: 1px solid var(--border);
+      background: var(--white);
+      border-radius: 4px;
+      padding: 10px 4px;
+      text-align: center;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: .82rem;
+      transition: border-color .15s, background .15s;
+    }
+    .time-btn:hover:not(:disabled) { border-color: var(--sage); background: var(--sage-pale); }
+    .time-btn.selected { border-color: var(--sage); background: #f5faf3; font-weight: 500; }
+    .time-btn:disabled { opacity: .35; cursor: not-allowed; background: #f8f8f8; }
+
+    .section-label {
+      font-size: .78rem;
+      letter-spacing: .1em;
+      color: var(--ink-light);
+      margin-bottom: 10px;
+    }
+
+    /* お客様情報フォーム */
+    .form-group { margin-bottom: 18px; }
+    .form-label {
+      display: block;
+      font-size: .78rem;
+      letter-spacing: .08em;
+      color: var(--ink-light);
+      margin-bottom: 6px;
+    }
+    .form-label .req {
+      color: var(--sage);
+      margin-left: 4px;
+      font-size: .7rem;
+    }
+    .form-input, .form-select {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 10px 12px;
+      font-family: inherit;
+      font-size: .9rem;
+      color: var(--ink);
+      background: var(--white);
+      outline: none;
+      transition: border-color .15s;
+    }
+    .form-input:focus, .form-select:focus { border-color: var(--sage); }
+    .form-input.error { border-color: var(--error); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .radio-group { display: flex; gap: 20px; }
+    .radio-label { display: flex; align-items: center; gap: 6px; font-size: .88rem; cursor: pointer; }
+    .radio-label input { accent-color: var(--sage); }
+
+    /* 確認画面 */
+    .confirm-table { width: 100%; border-collapse: collapse; }
+    .confirm-table tr { border-bottom: 1px solid var(--border); }
+    .confirm-table td {
+      padding: 12px 8px;
+      font-size: .88rem;
+      vertical-align: top;
+    }
+    .confirm-table td:first-child {
+      width: 36%;
+      color: var(--ink-light);
+      font-size: .78rem;
+      letter-spacing: .06em;
+    }
+
+    /* ボタン */
+    .btn-primary {
+      display: block;
+      width: 100%;
+      background: var(--sage);
+      color: var(--white);
+      border: none;
+      border-radius: 4px;
+      padding: 15px;
+      font-family: inherit;
+      font-size: .92rem;
+      letter-spacing: .12em;
+      cursor: pointer;
+      transition: background .15s;
+      margin-top: 28px;
+    }
+    .btn-primary:hover { background: #6a8a6a; }
+    .btn-primary:disabled { background: #aaa; cursor: not-allowed; }
+    .btn-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: none;
+      border: none;
+      color: var(--ink-light);
+      font-family: inherit;
+      font-size: .8rem;
+      cursor: pointer;
+      padding: 0;
+      margin-bottom: 20px;
+      letter-spacing: .06em;
+    }
+    .btn-back:hover { color: var(--ink); }
+
+    /* 完了画面 */
+    .done-card {
+      text-align: center;
+      padding: 48px 28px;
+    }
+    .done-icon {
+      width: 60px; height: 60px;
+      border: 1px solid var(--sage-light);
+      border-radius: 50%;
+      margin: 0 auto 20px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .done-icon svg { width: 28px; height: 28px; }
+    .done-title { font-size: 1.1rem; font-weight: 500; letter-spacing: .14em; margin-bottom: 12px; }
+    .done-msg { font-size: .84rem; color: var(--ink-light); line-height: 1.9; }
+
+    /* エラー */
+    .error-msg { color: var(--error); font-size: .76rem; margin-top: 4px; }
+    .loading { text-align: center; color: var(--ink-light); font-size: .84rem; padding: 20px; }
+
+    @media (max-width: 480px) {
+      .card { padding: 22px 16px; }
+      .form-row { grid-template-columns: 1fr; }
+      .steps .step { padding: 12px 10px; font-size: .68rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>ご予約</h1>
+  <p>Relaxation salon Raku</p>
+</header>
+
+<div class="steps">
+  <div class="step active" id="step1">メニュー</div>
+  <div class="step" id="step2">日時</div>
+  <div class="step" id="step3">お客様情報</div>
+  <div class="step" id="step4">確認</div>
+</div>
+
+<main>
+
+  <!-- STEP1: メニュー -->
+  <div class="card active" id="cardMenu">
+    <div class="card-title">メニューをお選びください</div>
+    <div class="menu-list" id="menuList"></div>
+  </div>
+
+  <!-- STEP2: 日時 -->
+  <div class="card" id="cardDate">
+    <button class="btn-back" onclick="goStep(1)">← メニューに戻る</button>
+    <div class="card-title">日時をお選びください</div>
+    <div class="section-label">日付</div>
+    <div class="date-grid" id="dateGrid"></div>
+    <div class="section-label" id="timeLabel" style="display:none">空き時間</div>
+    <div class="time-grid" id="timeGrid"></div>
+  </div>
+
+  <!-- STEP3: お客様情報 -->
+  <div class="card" id="cardInfo">
+    <button class="btn-back" onclick="goStep(2)">← 日時に戻る</button>
+    <div class="card-title">お客様情報をご入力ください</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">お名前<span class="req">必須</span></label>
+        <input id="fName" class="form-input" type="text" placeholder="山田 花子">
+        <div class="error-msg" id="errName"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">ふりがな<span class="req">必須</span></label>
+        <input id="fKana" class="form-input" type="text" placeholder="やまだ はなこ">
+        <div class="error-msg" id="errKana"></div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">メールアドレス<span class="req">必須</span></label>
+      <input id="fEmail" class="form-input" type="email" placeholder="example@mail.com">
+      <div class="error-msg" id="errEmail"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">電話番号<span class="req">必須</span></label>
+      <input id="fTel" class="form-input" type="tel" placeholder="090-0000-0000">
+      <div class="error-msg" id="errTel"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">初回 / リピート<span class="req">必須</span></label>
+      <div class="radio-group">
+        <label class="radio-label"><input type="radio" name="visit" value="first" checked> 初回</label>
+        <label class="radio-label"><input type="radio" name="visit" value="repeat"> リピート</label>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">ご要望・アレルギー等（任意）</label>
+      <input id="fNote" class="form-input" type="text" placeholder="気になる部位など">
+    </div>
+    <button class="btn-primary" onclick="goStep(4)">確認画面へ</button>
+  </div>
+
+  <!-- STEP4: 確認 -->
+  <div class="card" id="cardConfirm">
+    <button class="btn-back" onclick="goStep(3)">← お客様情報に戻る</button>
+    <div class="card-title">ご予約内容のご確認</div>
+    <table class="confirm-table">
+      <tr><td>メニュー</td><td id="cMenu">—</td></tr>
+      <tr><td>料金</td><td id="cPrice">—</td></tr>
+      <tr><td>日時</td><td id="cDate">—</td></tr>
+      <tr><td>お名前</td><td id="cName">—</td></tr>
+      <tr><td>ふりがな</td><td id="cKana">—</td></tr>
+      <tr><td>メール</td><td id="cEmail">—</td></tr>
+      <tr><td>電話番号</td><td id="cTel">—</td></tr>
+      <tr><td>初回/リピート</td><td id="cVisit">—</td></tr>
+      <tr><td>ご要望</td><td id="cNote">—</td></tr>
+    </table>
+    <button class="btn-primary" id="btnSubmit" onclick="submitReservation()">この内容で予約する</button>
+  </div>
+
+  <!-- 完了 -->
+  <div class="card done-card" id="cardDone">
+    <div class="done-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#7a9a7a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    </div>
+    <div class="done-title">ご予約を承りました</div>
+    <div class="done-msg">
+      ご登録のメールアドレスに確認メールをお送りしました。<br>
+      キャンセルはメール内のリンクよりお手続きください。<br><br>
+      当日お会いできることを楽しみにしております。
+    </div>
+  </div>
+
+</main>
+
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getFirestore, collection, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyA7DY0iwx38gGsAzM-RbX-bxkQaCzu6XyA",
+    authDomain: "relaxation-salon-raku.firebaseapp.com",
+    projectId: "relaxation-salon-raku",
+    storageBucket: "relaxation-salon-raku.appspot.com",
+    messagingSenderId: "961657852734",
+    appId: "1:961657852734:web:3c282c0cb866fe6ca3926f",
+    measurementId: "G-DBMD1RRYTC"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  window._db = db;
+  window._collection = collection;
+  window._addDoc = addDoc;
+  window._query = query;
+  window._where = where;
+  window._getDocs = getDocs;
+</script>
+
+<script>
+  // ====== 設定 ======
+  const MENUS = [
+    { id: "menu1", name: "リラクゼーション 60分", duration: 60, price: 3500 },
+    { id: "menu2", name: "リラクゼーション 90分", duration: 90, price: 5000 },
+    { id: "menu3", name: "リラクゼーション 120分", duration: 120, price: 6500 }
+  ];
+
+  const OPEN_HOUR = 10;
+  const CLOSE_HOUR = 20;
+  const INTERVAL = 60; // 分単位
+  const CLOSED_DAYS = []; // 定休日（0=日,1=月...）
+
+  const SITE_URL = "https://relaxsalon-raku.github.io/Relaxation-salon-Raku";
+
+  // ====== 状態 ======
+  let selectedMenu = null;
+  let selectedDate = null;
+  let selectedTime = null;
+
+  // ====== 初期化 ======
+  function init() {
+    renderMenus();
+  }
+
+  function renderMenus() {
+    const list = document.getElementById("menuList");
+    list.innerHTML = MENUS.map(m => `
+      <div class="menu-item" onclick="selectMenu('${m.id}')">
+        <div>
+          <div class="menu-name">${m.name}</div>
+          <div class="menu-meta">${m.duration}分</div>
+        </div>
+        <div class="menu-price">¥${m.price.toLocaleString()}</div>
+      </div>
+    `).join('');
+  }
+
+  function selectMenu(id) {
+    selectedMenu = MENUS.find(m => m.id === id);
+    document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('selected'));
+    event.currentTarget.classList.add('selected');
+    setTimeout(() => goStep(2), 180);
+  }
+
+  // ====== 日付グリッド ======
+  function renderDates() {
+    const grid = document.getElementById("dateGrid");
+    const today = new Date();
+    const days = ["日","月","火","水","木","金","土"];
+    let html = '';
+
+    for (let i = 1; i <= 30; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+      const dow = d.getDay();
+      const closed = CLOSED_DAYS.includes(dow);
+      const dateStr = formatDate(d);
+      const dayClass = dow === 0 ? 'sun' : dow === 6 ? 'sat' : '';
+      html += `
+        <button class="date-btn${closed ? '' : ''}" 
+          onclick="selectDate('${dateStr}', this)"
+          ${closed ? 'disabled' : ''}
+          data-date="${dateStr}">
+          <div>${d.getMonth()+1}/${d.getDate()}</div>
+          <div class="date-day ${dayClass}">${days[dow]}</div>
+        </button>`;
+    }
+    grid.innerHTML = html;
+  }
+
+  async function selectDate(dateStr, el) {
+    selectedDate = dateStr;
+    selectedTime = null;
+    document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('selected'));
+    el.classList.add('selected');
+    
+    const timeGrid = document.getElementById("timeGrid");
+    const timeLabel = document.getElementById("timeLabel");
+    timeGrid.innerHTML = '<div class="loading">空き時間を確認中...</div>';
+    timeLabel.style.display = 'block';
+
+    // 予約済みを取得
+    const booked = await getBookedTimes(dateStr);
+    renderTimes(booked);
+  }
+
+  async function getBookedTimes(dateStr) {
+    try {
+      await waitForDb();
+      const q = window._query(
+        window._collection(window._db, "reservations"),
+        window._where("date", "==", dateStr)
+      );
+      const snap = await window._getDocs(q);
+      return snap.docs.map(d => d.data().time);
+    } catch(e) { return []; }
+  }
+
+  function renderTimes(booked) {
+    const grid = document.getElementById("timeGrid");
+    const duration = selectedMenu ? selectedMenu.duration : 60;
+    let html = '';
+    let hasSlot = false;
+
+    for (let h = OPEN_HOUR; h < CLOSE_HOUR; h++) {
+      for (let m = 0; m < 60; m += INTERVAL) {
+        const endMin = h * 60 + m + duration;
+        if (endMin > CLOSE_HOUR * 60) break;
+        const timeStr = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+        const isBooked = booked.includes(timeStr);
+        html += `<button class="time-btn" onclick="selectTime('${timeStr}', this)" ${isBooked ? 'disabled' : ''}>${timeStr}</button>`;
+        if (!isBooked) hasSlot = true;
+      }
+    }
+    if (!hasSlot) html = '<div style="color:#999;font-size:.84rem;padding:8px">この日は満員です</div>';
+    grid.innerHTML = html;
+  }
+
+  function selectTime(timeStr, el) {
+    selectedTime = timeStr;
+    document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('selected'));
+    el.classList.add('selected');
+    setTimeout(() => goStep(3), 180);
+  }
+
+  // ====== ステップ制御 ======
+  function goStep(n) {
+    if (n === 2 && !selectedMenu) return;
+    if (n === 3 && (!selectedDate || !selectedTime)) return;
+    if (n === 4 && !validateForm()) return;
+
+    const cards = ["cardMenu","cardDate","cardInfo","cardConfirm"];
+    cards.forEach((id, i) => {
+      document.getElementById(id).classList.toggle('active', i === n - 1);
+    });
+    document.querySelectorAll('.step').forEach((el, i) => {
+      el.classList.toggle('active', i === n - 1);
+    });
+
+    if (n === 2) renderDates();
+    if (n === 4) fillConfirm();
+    window.scrollTo(0, 0);
+  }
+
+  // ====== バリデーション ======
+  function validateForm() {
+    let ok = true;
+    const fields = [
+      { id: 'fName', err: 'errName', msg: 'お名前を入力してください' },
+      { id: 'fKana', err: 'errKana', msg: 'ふりがなを入力してください' },
+      { id: 'fEmail', err: 'errEmail', msg: 'メールアドレスを入力してください' },
+      { id: 'fTel', err: 'errTel', msg: '電話番号を入力してください' }
+    ];
+    fields.forEach(f => {
+      const val = document.getElementById(f.id).value.trim();
+      document.getElementById(f.err).textContent = val ? '' : f.msg;
+      document.getElementById(f.id).classList.toggle('error', !val);
+      if (!val) ok = false;
+    });
+    return ok;
+  }
+
+  // ====== 確認画面 ======
+  function fillConfirm() {
+    const dateObj = new Date(selectedDate + 'T00:00:00');
+    const days = ["日","月","火","水","木","金","土"];
+    const dateStr2 = `${dateObj.getFullYear()}年${dateObj.getMonth()+1}月${dateObj.getDate()}日（${days[dateObj.getDay()]}）`;
+
+    document.getElementById("cMenu").textContent = selectedMenu.name;
+    document.getElementById("cPrice").textContent = `¥${selectedMenu.price.toLocaleString()}`;
+    document.getElementById("cDate").textContent = `${dateStr2} ${selectedTime}〜`;
+    document.getElementById("cName").textContent = document.getElementById("fName").value.trim();
+    document.getElementById("cKana").textContent = document.getElementById("fKana").value.trim();
+    document.getElementById("cEmail").textContent = document.getElementById("fEmail").value.trim();
+    document.getElementById("cTel").textContent = document.getElementById("fTel").value.trim();
+    document.getElementById("cVisit").textContent = document.querySelector('[name=visit]:checked').value === 'first' ? '初回' : 'リピート';
+    document.getElementById("cNote").textContent = document.getElementById("fNote").value.trim() || '—';
+  }
+
+  // ====== 予約送信 ======
+  async function submitReservation() {
+    const btn = document.getElementById("btnSubmit");
+    btn.disabled = true;
+    btn.textContent = "送信中...";
+
+    try {
+      await waitForDb();
+
+      const name = document.getElementById("fName").value.trim();
+      const kana = document.getElementById("fKana").value.trim();
+      const email = document.getElementById("fEmail").value.trim();
+      const tel = document.getElementById("fTel").value.trim();
+      const visit = document.querySelector('[name=visit]:checked').value;
+      const note = document.getElementById("fNote").value.trim();
+
+      const dateObj = new Date(selectedDate + 'T00:00:00');
+      const days = ["日","月","火","水","木","金","土"];
+      const dateStr2 = `${dateObj.getFullYear()}年${dateObj.getMonth()+1}月${dateObj.getDate()}日（${days[dateObj.getDay()]}）`;
+
+      const reservationId = selectedDate + "_" + selectedTime.replace(":","");
+      const cancelUrl = `${SITE_URL}/cancel.html?id=${reservationId}`;
+
+      const data = {
+        name, kana, email, tel, visit, note,
+        date: selectedDate,
+        time: selectedTime,
+        menu: selectedMenu.name,
+        menuId: selectedMenu.id,
+        price: selectedMenu.price,
+        duration: selectedMenu.duration,
+        reservationId,
+        cancelUrl,
+        createdAt: new Date().toISOString()
+      };
+
+      await window._addDoc(window._collection(window._db, "reservations"), data);
+
+      // EmailJS送信
+      const emailParams = {
+        customer_name: name,
+        customer_kana: kana,
+        customer_email: email,
+        phone: tel,
+        menu_name: selectedMenu.name,
+        date: dateStr2,
+        time: selectedTime + "〜",
+        visit_type: visit === "first" ? "初回" : "リピート",
+        cancel_url: cancelUrl,
+        note: note || "なし",
+        greeting: "ご予約を承りました。",
+        subject: "【Raku】ご予約を承りました"
+      };
+
+      const storeParams = {
+        customer_name: name,
+        customer_email: email,
+        phone: tel,
+        menu_name: selectedMenu.name,
+        date: dateStr2,
+        time: selectedTime + "〜",
+        visit_type: visit === "first" ? "初回" : "リピート",
+        note: note || "なし"
+      };
+
+      await emailjs.send("service_bnt9a2u", "template_jc40kl6", emailParams);
+      await emailjs.send("service_bnt9a2u", "template_nzpbkzi", storeParams);
+
+      // 完了画面
+      document.getElementById("cardConfirm").classList.remove("active");
+      document.getElementById("cardDone").classList.add("active");
+      document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
+      window.scrollTo(0, 0);
+
+    } catch(e) {
+      console.error(e);
+      btn.disabled = false;
+      btn.textContent = "この内容で予約する";
+      alert("エラーが発生しました。\nしばらく経ってから再度お試しください。");
+    }
+  }
+
+  // ====== ユーティリティ ======
+  function formatDate(d) {
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+
+  async function waitForDb() {
+    let t = 0;
+    while (!window._db && t < 50) { await new Promise(r => setTimeout(r, 100)); t++; }
+    if (!window._db) throw new Error('DB not initialized');
+  }
+
+  document.addEventListener("DOMContentLoaded", init);
+
+  // グローバル公開
+  window.goStep = goStep;
+  window.selectMenu = selectMenu;
+  window.selectDate = selectDate;
+  window.selectTime = selectTime;
+  window.submitReservation = submitReservation;
+</script>
+
+<!-- EmailJS -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>emailjs.init("M4ezlu15f5F7gi5aY");</script>
+
+</body>
+</html>

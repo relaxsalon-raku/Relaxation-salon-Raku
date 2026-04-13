@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理画面 | Raku</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --sage: #7a9a7a; --sage-light: #c8d8c0; --sage-pale: #f0f5ee;
+      --ink: #2c2c2c; --ink-light: #666; --border: #d8e4d0; --white: #fff; --error: #c0392b;
+    }
+    body { font-family: 'Noto Serif JP', serif; background: var(--sage-pale); color: var(--ink); min-height: 100vh; }
+    header { background: var(--white); border-bottom: 1px solid var(--border); padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; }
+    header h1 { font-size: 1.1rem; font-weight: 400; letter-spacing: .14em; }
+    .btn-logout { background: none; border: 1px solid var(--border); border-radius: 4px; padding: 6px 14px; font-family: inherit; font-size: .78rem; color: var(--ink-light); cursor: pointer; }
+    .btn-logout:hover { color: var(--ink); border-color: var(--ink-light); }
+
+    /* ログイン */
+    .login-wrap { max-width: 380px; margin: 80px auto; padding: 0 16px; }
+    .card { background: var(--white); border: 1px solid var(--border); border-radius: 4px; padding: 32px 28px; }
+    .card-title { font-size: 1rem; font-weight: 500; letter-spacing: .12em; margin-bottom: 24px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+    .form-group { margin-bottom: 18px; }
+    .form-label { display: block; font-size: .78rem; letter-spacing: .08em; color: var(--ink-light); margin-bottom: 6px; }
+    .form-input { width: 100%; border: 1px solid var(--border); border-radius: 4px; padding: 10px 12px; font-family: inherit; font-size: .9rem; outline: none; transition: border-color .15s; }
+    .form-input:focus { border-color: var(--sage); }
+    .btn-primary { display: block; width: 100%; background: var(--sage); color: var(--white); border: none; border-radius: 4px; padding: 14px; font-family: inherit; font-size: .9rem; letter-spacing: .12em; cursor: pointer; transition: background .15s; }
+    .btn-primary:hover { background: #6a8a6a; }
+    .error-msg { color: var(--error); font-size: .76rem; margin-top: 8px; }
+
+    /* 管理本体 */
+    .admin-wrap { max-width: 900px; margin: 32px auto; padding: 0 16px 60px; }
+    .tabs { display: flex; gap: 0; background: var(--white); border: 1px solid var(--border); border-radius: 4px 4px 0 0; overflow: hidden; }
+    .tab { padding: 12px 22px; font-size: .82rem; letter-spacing: .08em; cursor: pointer; border-bottom: 2px solid transparent; transition: color .15s, border-color .15s; color: var(--ink-light); }
+    .tab.active { color: var(--sage); border-bottom-color: var(--sage); font-weight: 500; }
+    .tab-content { background: var(--white); border: 1px solid var(--border); border-top: none; border-radius: 0 0 4px 4px; padding: 28px; display: none; }
+    .tab-content.active { display: block; }
+
+    /* 予約一覧 */
+    .filter-row { display: flex; gap: 10px; margin-bottom: 20px; align-items: center; }
+    .filter-row input { border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; font-family: inherit; font-size: .84rem; outline: none; }
+    .filter-row input:focus { border-color: var(--sage); }
+    .reservation-table { width: 100%; border-collapse: collapse; font-size: .84rem; }
+    .reservation-table th { text-align: left; padding: 10px 8px; color: var(--ink-light); font-weight: 400; font-size: .76rem; letter-spacing: .06em; border-bottom: 2px solid var(--border); }
+    .reservation-table td { padding: 12px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    .reservation-table tr:hover td { background: var(--sage-pale); }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 2px; font-size: .72rem; }
+    .badge-first { background: #e8f5e9; color: #388e3c; }
+    .badge-repeat { background: #e3f2fd; color: #1976d2; }
+    .btn-delete { background: none; border: 1px solid #eaa; color: #c0392b; border-radius: 3px; padding: 3px 10px; font-family: inherit; font-size: .74rem; cursor: pointer; }
+    .btn-delete:hover { background: #fdecea; }
+    .empty-msg { text-align: center; padding: 40px; color: var(--ink-light); font-size: .84rem; }
+    .loading { text-align: center; padding: 40px; color: var(--ink-light); font-size: .84rem; }
+
+    /* 定休日・ブロック設定 */
+    .dow-grid { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+    .dow-btn { border: 1px solid var(--border); background: var(--white); border-radius: 4px; padding: 8px 14px; font-family: inherit; font-size: .84rem; cursor: pointer; transition: all .15s; }
+    .dow-btn.active { border-color: var(--sage); background: #f5faf3; color: var(--sage); font-weight: 500; }
+    .block-list { margin-top: 16px; }
+    .block-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 8px; font-size: .84rem; }
+    .add-block-row { display: flex; gap: 8px; margin-bottom: 16px; }
+    .add-block-row input { border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; font-family: inherit; font-size: .84rem; outline: none; }
+    .add-block-row input:focus { border-color: var(--sage); }
+    .btn-add { background: var(--sage); color: var(--white); border: none; border-radius: 4px; padding: 8px 16px; font-family: inherit; font-size: .84rem; cursor: pointer; white-space: nowrap; }
+    .btn-save { background: var(--sage); color: var(--white); border: none; border-radius: 4px; padding: 10px 24px; font-family: inherit; font-size: .88rem; letter-spacing: .1em; cursor: pointer; margin-top: 20px; }
+    .save-msg { font-size: .78rem; color: var(--sage); margin-top: 8px; display: none; }
+
+    @media (max-width: 600px) {
+      .reservation-table { display: block; overflow-x: auto; }
+      .tabs .tab { padding: 12px 14px; font-size: .76rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ログイン画面 -->
+<div id="loginPage">
+  <div class="login-wrap">
+    <div class="card">
+      <div class="card-title">管理画面ログイン</div>
+      <div class="form-group">
+        <label class="form-label">パスワード</label>
+        <input id="pwInput" class="form-input" type="password" placeholder="パスワードを入力" onkeydown="if(event.key==='Enter')login()">
+      </div>
+      <button class="btn-primary" onclick="login()">ログイン</button>
+      <div class="error-msg" id="loginErr"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 管理本体 -->
+<div id="adminPage" style="display:none">
+  <header>
+    <h1>管理画面 — Raku</h1>
+    <button class="btn-logout" onclick="logout()">ログアウト</button>
+  </header>
+
+  <div class="admin-wrap">
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('tabReservations', this)">予約一覧</div>
+      <div class="tab" onclick="switchTab('tabSettings', this)">定休日・ブロック</div>
+    </div>
+
+    <!-- 予約一覧 -->
+    <div class="tab-content active" id="tabReservations">
+      <div class="filter-row">
+        <input type="date" id="filterDate" onchange="renderReservations()">
+        <input type="text" id="filterName" placeholder="名前で検索" oninput="renderReservations()">
+      </div>
+      <div id="reservationList"><div class="loading">読み込み中...</div></div>
+    </div>
+
+    <!-- 定休日・ブロック -->
+    <div class="tab-content" id="tabSettings">
+      <div class="card-title" style="border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:20px">定休日設定</div>
+      <div class="dow-grid" id="dowGrid"></div>
+      <button class="btn-save" onclick="saveDow()">定休日を保存</button>
+      <div class="save-msg" id="dowSaveMsg">保存しました</div>
+
+      <div class="card-title" style="border-bottom:1px solid var(--border);padding-bottom:12px;margin-top:32px;margin-bottom:20px">日時ブロック</div>
+      <div class="add-block-row">
+        <input type="date" id="blockDate">
+        <input type="time" id="blockTime" step="3600">
+        <button class="btn-add" onclick="addBlock()">追加</button>
+      </div>
+      <div class="block-list" id="blockList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getFirestore, collection, getDocs, deleteDoc, doc, setDoc, getDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyA7DY0iwx38gGsAzM-RbX-bxkQaCzu6XyA",
+    authDomain: "relaxation-salon-raku.firebaseapp.com",
+    projectId: "relaxation-salon-raku",
+    storageBucket: "relaxation-salon-raku.appspot.com",
+    messagingSenderId: "961657852734",
+    appId: "1:961657852734:web:3c282c0cb866fe6ca3926f"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  window._db = db;
+  window._collection = collection;
+  window._getDocs = getDocs;
+  window._deleteDoc = deleteDoc;
+  window._doc = doc;
+  window._setDoc = setDoc;
+  window._getDoc = getDoc;
+  window._query = query;
+  window._orderBy = orderBy;
+</script>
+
+<script>
+  const ADMIN_PW = "raku2026";
+  const DAYS = ["日","月","火","水","木","金","土"];
+
+  let allReservations = [];
+  let closedDows = [];
+  let blocks = [];
+
+  // ====== 認証 ======
+  function login() {
+    const pw = document.getElementById("pwInput").value;
+    if (pw === ADMIN_PW) {
+      document.getElementById("loginPage").style.display = "none";
+      document.getElementById("adminPage").style.display = "block";
+      loadAll();
+    } else {
+      document.getElementById("loginErr").textContent = "パスワードが違います";
+    }
+  }
+  function logout() {
+    document.getElementById("adminPage").style.display = "none";
+    document.getElementById("loginPage").style.display = "block";
+    document.getElementById("pwInput").value = "";
+  }
+
+  // ====== データ読み込み ======
+  async function loadAll() {
+    await waitForDb();
+    await Promise.all([loadReservations(), loadSettings()]);
+  }
+
+  async function loadReservations() {
+    const snap = await window._getDocs(window._collection(window._db, "reservations"));
+    allReservations = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    allReservations.sort((a, b) => (a.date + a.time) < (b.date + b.time) ? 1 : -1);
+    renderReservations();
+  }
+
+  async function loadSettings() {
+    try {
+      const d = await window._getDoc(window._doc(window._db, "settings", "main"));
+      if (d.exists()) {
+        const data = d.data();
+        closedDows = data.closedDows || [];
+        blocks = data.blocks || [];
+      }
+    } catch(e) {}
+    renderDow();
+    renderBlocks();
+  }
+
+  // ====== 予約一覧 ======
+  function renderReservations() {
+    const filterDate = document.getElementById("filterDate").value;
+    const filterName = document.getElementById("filterName").value.trim().toLowerCase();
+
+    let list = allReservations;
+    if (filterDate) list = list.filter(r => r.date === filterDate);
+    if (filterName) list = list.filter(r => (r.name || "").toLowerCase().includes(filterName) || (r.kana || "").includes(filterName));
+
+    const el = document.getElementById("reservationList");
+    if (!list.length) { el.innerHTML = '<div class="empty-msg">予約はありません</div>'; return; }
+
+    el.innerHTML = `
+      <table class="reservation-table">
+        <thead><tr>
+          <th>日時</th><th>メニュー</th><th>お名前</th><th>電話番号</th><th>種別</th><th>ご要望</th><th></th>
+        </tr></thead>
+        <tbody>
+          ${list.map(r => {
+            const dateObj = new Date(r.date + 'T00:00:00');
+            const dateStr = `${dateObj.getMonth()+1}/${dateObj.getDate()}(${DAYS[dateObj.getDay()]}) ${r.time || ''}`;
+            return `<tr>
+              <td>${dateStr}</td>
+              <td>${r.menu || '—'}</td>
+              <td>${r.name || '—'}<br><span style="font-size:.74rem;color:#999">${r.kana || ''}</span></td>
+              <td>${r.tel || '—'}</td>
+              <td><span class="badge ${r.visit === 'first' ? 'badge-first' : 'badge-repeat'}">${r.visit === 'first' ? '初回' : 'リピート'}</span></td>
+              <td style="max-width:160px;font-size:.8rem">${r.note || '—'}</td>
+              <td><button class="btn-delete" onclick="deleteReservation('${r.id}')">削除</button></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`;
+  }
+
+  async function deleteReservation(id) {
+    if (!confirm("この予約を削除しますか？")) return;
+    await window._deleteDoc(window._doc(window._db, "reservations", id));
+    allReservations = allReservations.filter(r => r.id !== id);
+    renderReservations();
+  }
+
+  // ====== 定休日 ======
+  function renderDow() {
+    const grid = document.getElementById("dowGrid");
+    grid.innerHTML = DAYS.map((d, i) => 
+      `<button class="dow-btn ${closedDows.includes(i) ? 'active' : ''}" onclick="toggleDow(${i})">${d}曜</button>`
+    ).join('');
+  }
+
+  function toggleDow(i) {
+    if (closedDows.includes(i)) closedDows = closedDows.filter(d => d !== i);
+    else closedDows.push(i);
+    renderDow();
+  }
+
+  async function saveDow() {
+    await waitForDb();
+    await window._setDoc(window._doc(window._db, "settings", "main"), { closedDows, blocks }, { merge: true });
+    const msg = document.getElementById("dowSaveMsg");
+    msg.style.display = "block";
+    setTimeout(() => msg.style.display = "none", 2000);
+  }
+
+  // ====== ブロック設定 ======
+  function renderBlocks() {
+    const el = document.getElementById("blockList");
+    if (!blocks.length) { el.innerHTML = '<div style="color:#999;font-size:.84rem">ブロックなし</div>'; return; }
+    el.innerHTML = blocks.map((b, i) => `
+      <div class="block-item">
+        <span>${b.date} ${b.time}</span>
+        <button class="btn-delete" onclick="removeBlock(${i})">削除</button>
+      </div>`).join('');
+  }
+
+  async function addBlock() {
+    const date = document.getElementById("blockDate").value;
+    const time = document.getElementById("blockTime").value;
+    if (!date || !time) { alert("日付と時間を選択してください"); return; }
+    blocks.push({ date, time });
+    await waitForDb();
+    await window._setDoc(window._doc(window._db, "settings", "main"), { closedDows, blocks }, { merge: true });
+    renderBlocks();
+  }
+
+  async function removeBlock(i) {
+    blocks.splice(i, 1);
+    await waitForDb();
+    await window._setDoc(window._doc(window._db, "settings", "main"), { closedDows, blocks }, { merge: true });
+    renderBlocks();
+  }
+
+  // ====== タブ ======
+  function switchTab(id, el) {
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    el.classList.add('active');
+  }
+
+  async function waitForDb() {
+    let t = 0;
+    while (!window._db && t < 50) { await new Promise(r => setTimeout(r, 100)); t++; }
+  }
+
+  // グローバル公開
+  window.login = login;
+  window.logout = logout;
+  window.renderReservations = renderReservations;
+  window.deleteReservation = deleteReservation;
+  window.toggleDow = toggleDow;
+  window.saveDow = saveDow;
+  window.addBlock = addBlock;
+  window.removeBlock = removeBlock;
+  window.switchTab = switchTab;
+</script>
+
+</body>
+</html>
