@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://fonts.googleapis.com; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; frame-ancestors 'none';">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
   <title>予約キャンセル | Relaxation salon Raku</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;500&family=Shippori+Mincho:wght@400;500&display=swap" rel="stylesheet">
   <style>
@@ -23,23 +26,17 @@
       --shadow:   0 2px 16px rgba(0,0,0,.07);
     }
     body { font-family:'Noto Serif JP',serif; background:var(--cream); color:var(--text); min-height:100vh; }
-
     header { background:var(--beige); text-align:center; padding:56px 20px 48px; }
     header h1 { font-family:'Shippori Mincho',serif; font-size:clamp(22px,4vw,32px); font-weight:500; color:var(--green); line-height:1.6; letter-spacing:.08em; }
     header .sub { margin-top:14px; font-size:12px; letter-spacing:.18em; color:var(--sub); }
-
     .main { max-width:600px; margin:0 auto; padding:24px 16px 60px; }
     .card { background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow); padding:28px 24px; margin-top:20px; }
     .card-title { font-size:15px; font-weight:500; color:var(--green); border-left:3px solid var(--green); padding-left:10px; margin-bottom:20px; letter-spacing:.05em; }
-
-    /* 確認テーブル */
     .confirm-table { width:100%; border-collapse:collapse; }
     .confirm-table tr { border-bottom:1px solid var(--border); }
     .confirm-table tr:last-child { border-bottom:none; }
     .confirm-table th { text-align:left; padding:12px 0; font-size:12px; color:var(--sub); font-weight:400; width:100px; letter-spacing:.04em; }
     .confirm-table td { padding:12px 0; font-size:14px; }
-
-    /* ボタン */
     .btn-row { display:flex; gap:10px; margin-top:24px; }
     .btn { flex:1; padding:14px; border-radius:10px; font-size:14px; font-family:'Noto Serif JP',serif; font-weight:500; letter-spacing:.06em; cursor:pointer; border:none; transition:all .2s; }
     .btn-danger { background:var(--red); color:var(--white); }
@@ -47,65 +44,31 @@
     .btn-danger:disabled { background:var(--border); cursor:default; }
     .btn-s { background:var(--white); color:var(--green); border:1.5px solid var(--green); }
     .btn-s:hover { background:var(--green-bg); }
-
-    /* 完了 */
     .done-wrap { text-align:center; padding:48px 24px; }
     .done-icon  { font-size:48px; margin-bottom:16px; }
     .done-title { font-size:20px; font-weight:500; color:var(--sub); margin-bottom:10px; letter-spacing:.06em; }
     .done-text  { font-size:13px; color:var(--sub); line-height:1.8; }
-
-    /* エラー */
     .error-wrap { text-align:center; padding:48px 24px; }
     .error-icon  { font-size:48px; margin-bottom:16px; }
     .error-title { font-size:18px; font-weight:500; color:var(--red); margin-bottom:10px; }
     .error-text  { font-size:13px; color:var(--sub); line-height:1.8; }
-
-    /* ローディング */
     .loading-wrap { text-align:center; padding:48px 24px; }
     .loading-text { font-size:14px; color:var(--sub); }
-
-    /* 完了画面の再予約ボタン */
     .done-btn-wrap { margin-top:24px; }
-    .done-btn {
-      display:inline-block; padding:14px 28px;
-      background:var(--green); color:var(--white);
-      border-radius:10px; font-size:14px;
-      font-family:'Noto Serif JP',serif; font-weight:500;
-      letter-spacing:.06em; text-decoration:none;
-      transition:background .2s;
-    }
+    .done-btn { display:inline-block; padding:14px 28px; background:var(--green); color:var(--white); border-radius:10px; font-size:14px; font-family:'Noto Serif JP',serif; font-weight:500; letter-spacing:.06em; text-decoration:none; transition:background .2s; }
     .done-btn:hover { background:var(--green-lt); }
-
-    /* 完了画面の再予約ボタン */
-    .done-btn-wrap { margin-top:24px; }
-    .done-btn {
-      display:inline-block; padding:14px 28px;
-      background:var(--green); color:var(--white);
-      border-radius:10px; font-size:14px;
-      font-family:'Noto Serif JP',serif; font-weight:500;
-      letter-spacing:.06em; text-decoration:none;
-      transition:background .2s;
-    }
-    .done-btn:hover { background:var(--green-lt); }
-
     .hidden { display:none !important; }
   </style>
 </head>
 <body>
-
 <header>
   <h1>ご予約のキャンセル<br>Relaxation salon Raku</h1>
   <p class="sub">RELAXATION SALON RAKU</p>
 </header>
-
 <div class="main">
-
-  <!-- ローディング -->
   <div id="loadingWrap" class="card loading-wrap">
     <p class="loading-text">予約情報を読み込み中...</p>
   </div>
-
-  <!-- キャンセル確認 -->
   <div id="confirmWrap" class="card hidden">
     <p class="card-title">以下の予約をキャンセルしますか？</p>
     <table class="confirm-table">
@@ -119,109 +82,93 @@
       <button class="btn btn-danger" id="cancelBtn" onclick="doCancel()">キャンセルする</button>
     </div>
   </div>
-
-  <!-- キャンセル完了 -->
   <div id="doneWrap" class="card done-wrap hidden">
     <div class="done-icon">🌿</div>
     <p class="done-title">キャンセルが完了しました</p>
-    <p class="done-text">
-      ご予約のキャンセルを承りました。<br>
-      またのご予約を心よりお待ちしております。<br><br>
-      次回もお気軽にご利用ください。<br>
-      皆様のお越しをスタッフ一同、<br>心よりお待ちしております。
-    </p>
-    <div class="done-btn-wrap">
-      <a href="reservation.html" class="done-btn">▶ 再度ご予約はこちら</a>
-    </div>
+    <p class="done-text">ご予約のキャンセルを承りました。<br>またのご予約を心よりお待ちしております。</p>
+    <div class="done-btn-wrap"><a href="reservation.html" class="done-btn">▶ 再度ご予約はこちら</a></div>
   </div>
-
-  <!-- エラー -->
   <div id="errorWrap" class="card error-wrap hidden">
     <div class="error-icon">⚠️</div>
     <p class="error-title" id="errorTitle">予約が見つかりませんでした</p>
-    <p class="error-text" id="errorText">URLが正しくないか、すでにキャンセル済みの可能性があります。<br>ご不明な点はお電話にてお問い合わせください。</p>
+    <p class="error-text" id="errorText">URLが正しくないか、すでにキャンセル済みの可能性があります。</p>
   </div>
-
 </div>
-
-<!-- Firebase -->
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getDatabase, ref, get, remove } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
-
 const firebaseConfig = {
   apiKey:            "AIzaSyA7DY0iwx38gGsAzM-RbX-bxkQaCzu6XyA",
   authDomain:        "relaxation-salon-raku.firebaseapp.com",
-  databaseURL:       "https://relaxation-salon-raku-default-rtdb.firebaseio.com",
+  databaseURL:       "https://relaxation-salon-raku-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId:         "relaxation-salon-raku",
   storageBucket:     "relaxation-salon-raku.appspot.com",
   messagingSenderId: "961657852734",
   appId:             "1:961657852734:web:3c282c0cb866fe6ca3926f",
-  measurementId:     "G-DBMD1RRYTC"
 };
-
 const app = initializeApp(firebaseConfig);
 const db  = getDatabase(app);
-
-// URLからIDを取得
 const params = new URLSearchParams(location.search);
 const rsvId  = params.get('id');
-
+function isValidFirebaseKey(key) {
+  return typeof key === 'string' && /^[-a-zA-Z0-9_]{10,30}$/.test(key);
+}
 window._doCancel = async function() {
+  if (!isValidFirebaseKey(rsvId)) throw new Error('無効なIDです');
   await remove(ref(db, 'reservations/' + rsvId));
 };
-
-// 予約情報の読み込み
+function checkCancelRateLimit() {
+  const key = 'rl_cancel';
+  const now = Date.now();
+  let history = [];
+  try { history = JSON.parse(localStorage.getItem(key) || '[]'); } catch(e) {}
+  history = history.filter(t => now - t < 24 * 60 * 60 * 1000);
+  if (history.length >= 5) throw new Error('キャンセル操作の上限に達しました。お電話にてお問い合わせください。');
+  history.push(now);
+  try { localStorage.setItem(key, JSON.stringify(history)); } catch(e) {}
+}
+window._checkCancelRateLimit = checkCancelRateLimit;
 async function loadReservation() {
-  if (!rsvId) {
-    showError('予約IDが指定されていません', 'URLが正しくありません。');
-    return;
-  }
+  if (!isValidFirebaseKey(rsvId)) { showError('URLエラー', 'URLが正しくありません。'); return; }
   try {
     const snap = await get(ref(db, 'reservations/' + rsvId));
-    if (!snap.exists()) {
-      showError('予約が見つかりませんでした', 'すでにキャンセル済みか、URLが正しくない可能性があります。');
-      return;
-    }
+    if (!snap.exists()) { showError('予約が見つかりませんでした', 'すでにキャンセル済みか、URLが正しくない可能性があります。'); return; }
     const r = snap.val();
-    const [, mo, d] = (r.date || '').split('-');
+    const [, mo, d] = (r.date || '--').split('-');
     document.getElementById('cStaff').textContent    = r.staff || '—';
-    document.getElementById('cDatetime').textContent = `${parseInt(mo)}月${parseInt(d)}日 ${r.time}〜`;
+    document.getElementById('cDatetime').textContent = parseInt(mo)+'月'+parseInt(d)+'日 '+(r.time || '')+'〜';
     document.getElementById('cMenu').textContent     = r.menuName || '—';
     document.getElementById('cName').textContent     = (r.name || '—') + ' 様';
-
     document.getElementById('loadingWrap').classList.add('hidden');
     document.getElementById('confirmWrap').classList.remove('hidden');
   } catch(e) {
-    showError('読み込みエラー', '通信エラーが発生しました。再度お試しください。');
+    console.warn('[cancel] load error:', e.code || '', e.message || e);
+    showError('読み込みエラー', 'ネットワークエラーが発生しました。再度お試しください。');
   }
 }
-
 function showError(title, text) {
   document.getElementById('loadingWrap').classList.add('hidden');
   document.getElementById('errorTitle').textContent = title;
   document.getElementById('errorText').textContent  = text;
   document.getElementById('errorWrap').classList.remove('hidden');
 }
-
 loadReservation();
 </script>
-
 <script>
 function goBack() { history.back(); }
-
 async function doCancel() {
   const btn = document.getElementById('cancelBtn');
-  btn.disabled = true;
-  btn.textContent = 'キャンセル中...';
+  btn.disabled = true; btn.textContent = 'キャンセル中...';
   try {
+    window._checkCancelRateLimit();
     await window._doCancel();
     document.getElementById('confirmWrap').classList.add('hidden');
     document.getElementById('doneWrap').classList.remove('hidden');
   } catch(e) {
-    alert('キャンセルに失敗しました。再度お試しください。');
-    btn.disabled = false;
-    btn.textContent = 'キャンセルする';
+    console.warn('[doCancel] error:', e.code || '', e.message || e);
+    const msg = (e.message && e.message.length < 80) ? e.message : 'キャンセルに失敗しました。再度お試しいただくか、お電話にてご連絡ください。';
+    alert(msg);
+    btn.disabled = false; btn.textContent = 'キャンセルする';
   }
 }
 </script>
