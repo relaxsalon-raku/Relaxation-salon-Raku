@@ -3,6 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://fonts.googleapis.com; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; frame-ancestors 'none';">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="Referrer-Policy" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>管理画面 | Raku</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -583,7 +588,7 @@ import { getDatabase, ref, get, set, push, update, remove, onValue }
 const firebaseConfig = {
   apiKey:            "AIzaSyA7DY0iwx38gGsAzM-RbX-bxkQaCzu6XyA",
   authDomain:        "relaxation-salon-raku.firebaseapp.com",
-  databaseURL:       "https://relaxation-salon-raku-default-rtdb.firebaseio.com",
+  databaseURL:       "https://relaxation-salon-raku-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId:         "relaxation-salon-raku",
   storageBucket:     "relaxation-salon-raku.appspot.com",
   messagingSenderId: "961657852734",
@@ -703,7 +708,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 <!-- メインJS -->
 <script>
-var PASS = 'raku2026';
+var PASS_HASH = 'd8850e35fcecf948638910512462f8c9833bdf585f0664472ad930eef25950b6';
+async function hashPassword(pw){var buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(pw));return Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');}
+var SESSION_KEY='raku_admin_session',SESSION_DURATION=30*60*1000,_sessionTimer=null;
+var AdminSession={set:function(){sessionStorage.setItem(SESSION_KEY,Date.now().toString());this.resetTimer();},isValid:function(){var ts=sessionStorage.getItem(SESSION_KEY);if(!ts)return false;return(Date.now()-parseInt(ts))<SESSION_DURATION;},clear:function(){sessionStorage.removeItem(SESSION_KEY);if(_sessionTimer)clearTimeout(_sessionTimer);},resetTimer:function(){if(_sessionTimer)clearTimeout(_sessionTimer);_sessionTimer=setTimeout(function(){AdminSession.clear();doLogout();alert('セッションがタイムアウトしました。再度ログインしてください。');},SESSION_DURATION);},touch:function(){if(this.isValid()){sessionStorage.setItem(SESSION_KEY,Date.now().toString());this.resetTimer();}}};
+var LoginGuard={MAX_ATTEMPTS:5,LOCK_DURATION:10*60*1000,check:function(){var now=Date.now(),data={};try{data=JSON.parse(sessionStorage.getItem('raku_login_fail')||'{}');}catch(e){}if(data.lockedUntil&&now<data.lockedUntil){var min=Math.ceil((data.lockedUntil-now)/60000);throw new Error('ログイン試行回数が上限を超えました。'+min+'分後に再試行してください。');}return data;},fail:function(){var now=Date.now(),data={};try{data=JSON.parse(sessionStorage.getItem('raku_login_fail')||'{}');}catch(e){}data.count=(data.count||0)+1;if(data.count>=this.MAX_ATTEMPTS){data.lockedUntil=now+this.LOCK_DURATION;data.count=0;}sessionStorage.setItem('raku_login_fail',JSON.stringify(data));return data.count;},reset:function(){sessionStorage.removeItem('raku_login_fail');}};
 var STAFF = ['ショウゴ','ミチコ','お任せ'];
 // メニュー料金マスタ（料金確定後に更新してください）
 var MENU_PRICES = {'もみほぐし 60分':3500,'もみほぐし 90分':5000,'もみほぐし 120分':6500};
@@ -738,21 +747,8 @@ var bookSlot = {};
 var extSlot = {};
 
 // ── ログイン ──
-function doLogin(){
-  var p = document.getElementById('loginPass').value;
-  if(p === PASS){
-    document.getElementById('loginWrap').classList.add('hidden');
-    document.getElementById('mainWrap').classList.remove('hidden');
-    init();
-  } else {
-    document.getElementById('loginErr').classList.remove('hidden');
-  }
-}
-function doLogout(){
-  document.getElementById('mainWrap').classList.add('hidden');
-  document.getElementById('loginWrap').classList.remove('hidden');
-  document.getElementById('loginPass').value = '';
-}
+async function doLogin(){var errEl=document.getElementById('loginErr');errEl.classList.add('hidden');var p=document.getElementById('loginPass').value;if(!p)return;try{LoginGuard.check();}catch(e){errEl.textContent=e.message;errEl.classList.remove('hidden');return;}try{var hash=await hashPassword(p);if(hash===PASS_HASH){LoginGuard.reset();AdminSession.set();document.getElementById('loginPass').value='';document.getElementById('loginWrap').classList.add('hidden');document.getElementById('mainWrap').classList.remove('hidden');init();document.addEventListener('click',function(){AdminSession.touch();},{passive:true});document.addEventListener('keydown',function(){AdminSession.touch();},{passive:true});}else{var count=LoginGuard.fail();var remain=LoginGuard.MAX_ATTEMPTS-count;errEl.textContent=remain>0?'パスワードが違います（残り'+remain+'回）':'ログインをロックしました。10分後に再試行してください。';errEl.classList.remove('hidden');document.getElementById('loginPass').value='';}}catch(e){errEl.textContent='ログインエラーが発生しました。再度お試しください。';errEl.classList.remove('hidden');}}
+function doLogout(){AdminSession.clear();document.getElementById('mainWrap').classList.add('hidden');document.getElementById('loginWrap').classList.remove('hidden');document.getElementById('loginPass').value='';}
 
 // ── 初期化 ──
 function init(){
